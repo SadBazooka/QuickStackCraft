@@ -5,6 +5,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -16,7 +17,6 @@ import net.zeronexus.quickstackcraft.network.DumpC2SPacket;
 import net.zeronexus.quickstackcraft.network.FavoriteToggleC2SPacket;
 import net.zeronexus.quickstackcraft.network.QuickStackC2SPacket;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -24,15 +24,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(InventoryScreen.class)
-public abstract class InventoryScreenMixin extends Screen {
+public abstract class InventoryScreenMixin extends AbstractContainerScreen<InventoryMenu> {
 
-    @Shadow protected int leftPos;
-    @Shadow protected int topPos;
-    @Shadow protected InventoryMenu menu;
-
-    @Shadow protected abstract boolean isHovering(Slot slot, double mouseX, double mouseY);
-
-    private InventoryScreenMixin() { super(Component.empty()); }
+    private InventoryScreenMixin() { super(null, null, Component.empty()); }
 
     @Unique private Button quickstackcraft$quickStackButton;
     @Unique private Button quickstackcraft$dumpButton;
@@ -74,7 +68,7 @@ public abstract class InventoryScreenMixin extends Screen {
     private void quickstackcraft$onMouseClicked(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
         if (button == 0 && Screen.hasAltDown()) {
             for (Slot slot : this.menu.slots) {
-                if (slot.container instanceof Inventory && this.isHovering(slot, mouseX, mouseY)) {
+                if (slot.container instanceof Inventory && this.isHovering(slot.x, slot.y, 16, 16, mouseX, mouseY)) {
                     int slotIndex = slot.getContainerSlot();
                     if (slotIndex >= 0 && slotIndex < 36) {
                         NetworkManager.sendToServer(new FavoriteToggleC2SPacket(slotIndex));
