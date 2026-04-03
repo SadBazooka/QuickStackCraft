@@ -6,6 +6,9 @@ import net.minecraft.world.item.ItemStack;
 import net.zeronexus.quickstackcraft.util.ContainerAccess;
 import net.zeronexus.quickstackcraft.util.InventoryUtil;
 
+import net.minecraft.core.BlockPos;
+
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -53,10 +56,17 @@ public final class DumpLogic {
             }
         }
 
+        List<BlockPos> blockPositions = new ArrayList<>();
+        List<Integer> entityIds = new ArrayList<>();
         for (ContainerAccess ca : usedContainers) {
             ca.container().setChanged();
+            if (ca.isBlockContainer()) {
+                blockPositions.add(ca.blockPos());
+            } else if (ca.entity() != null) {
+                entityIds.add(ca.entity().getId());
+            }
         }
 
-        return new TransferResult(totalMoved, usedContainers.size());
+        return new TransferResult(totalMoved, usedContainers.size(), blockPositions, entityIds);
     }
 }

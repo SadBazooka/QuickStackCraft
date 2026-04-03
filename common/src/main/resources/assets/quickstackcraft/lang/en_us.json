@@ -7,5 +7,8 @@
     "quickstackcraft.button.dump_all": "Dump All to Nearby",
     "key.quickstackcraft.quick_stack": "Quick Stack",
     "key.quickstackcraft.dump_all": "Dump All",
-    "key.categories.quickstackcraft": "QuickStack & Craft"
+    "key.categories.quickstackcraft": "QuickStack & Craft",
+    "quickstackcraft.message.craft_ready": "Ingredients ready (%d placed)",
+    "quickstackcraft.message.craft_partial": "Placed %d of %d ingredients (some missing)",
+    "quickstackcraft.message.craft_no_ingredients": "No matching ingredients found nearby"
 }

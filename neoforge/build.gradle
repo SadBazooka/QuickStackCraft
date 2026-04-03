@@ -32,6 +32,9 @@ dependencies {
     // Architectury API (NeoForge)
     modApi "dev.architectury:architectury-neoforge:${rootProject.architectury_api_version}"
 
+    // JEI (compile-only)
+    modCompileOnlyApi "mezz.jei:jei-${rootProject.minecraft_version}-neoforge-api:${rootProject.jei_version}"
+
     common(project(path: ":common", configuration: "namedElements")) { transitive = false }
     shadowBundle project(path: ":common", configuration: "transformProductionNeoForge")
 }
