@@ -38,6 +38,14 @@ public class ContainerAccess {
         return distanceSq;
     }
 
+    public BlockPos blockPos() {
+        return blockPos;
+    }
+
+    public Entity entity() {
+        return entity;
+    }
+
     public boolean isBlockContainer() {
         return blockPos != null;
     }

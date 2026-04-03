@@ -3,6 +3,7 @@ package net.zeronexus.quickstackcraft.neoforge;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -21,11 +22,16 @@ public class QuickStackCraftNeoForge {
         // Register attachment types
         FavoritesManagerImpl.ATTACHMENTS.register(modEventBus);
 
-        // Register keybinds
+        // Register keybinds and client events
         modEventBus.addListener(this::registerKeybinds);
+        modEventBus.addListener(this::onClientSetup);
 
         // Game event: sync favorites on login
         NeoForge.EVENT_BUS.addListener(this::onPlayerLogin);
+    }
+
+    private void onClientSetup(FMLClientSetupEvent event) {
+        QuickStackCraft.initClient();
     }
 
     private void registerKeybinds(RegisterKeyMappingsEvent event) {
