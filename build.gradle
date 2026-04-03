@@ -13,6 +13,30 @@ allprojects {
     version = "${rootProject.mod_version}+${rootProject.minecraft_version}"
 }
 
+tasks.register("collectJars") {
+    group = "build"
+    description = "Copies final jars to project root"
+    rootProject.enabled_platforms.split(",").each { platform ->
+        dependsOn ":${platform}:build"
+    }
+    doLast {
+        rootProject.enabled_platforms.split(",").each { platform ->
+            fileTree("${platform}/build/libs").matching {
+                include "*.jar"
+                exclude "*-dev-shadow*", "*-sources*"
+            }.each { jar ->
+                def dest = new File(rootDir, jar.name.replace(rootProject.archives_base_name, "${rootProject.archives_base_name}-${platform}"))
+                jar.bytes.with { dest.bytes = it }
+                println "  -> ${dest.name}"
+            }
+        }
+    }
+}
+
+tasks.register("build") {
+    dependsOn "collectJars"
+}
+
 subprojects {
     apply plugin: "dev.architectury.loom"
     apply plugin: "architectury-plugin"
