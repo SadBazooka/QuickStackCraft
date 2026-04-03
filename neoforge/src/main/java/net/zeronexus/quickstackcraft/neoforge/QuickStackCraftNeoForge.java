@@ -8,6 +8,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.zeronexus.quickstackcraft.QuickStackCraft;
 import net.zeronexus.quickstackcraft.client.ModKeybinds;
+import net.zeronexus.quickstackcraft.logic.neoforge.FavoritesManagerImpl;
 import net.zeronexus.quickstackcraft.network.ModNetworking;
 import net.minecraft.server.level.ServerPlayer;
 
