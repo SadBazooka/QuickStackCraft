@@ -1,0 +1,11 @@
+{
+    "quickstackcraft.message.quick_stack": "Stacked %d items to %d containers",
+    "quickstackcraft.message.nothing_to_stack": "No matching containers nearby",
+    "quickstackcraft.message.dump": "Deposited %d items to %d containers",
+    "quickstackcraft.message.nothing_to_dump": "No containers nearby with space",
+    "quickstackcraft.button.quick_stack": "Quick Stack to Nearby",
+    "quickstackcraft.button.dump_all": "Dump All to Nearby",
+    "key.quickstackcraft.quick_stack": "Quick Stack",
+    "key.quickstackcraft.dump_all": "Dump All",
+    "key.categories.quickstackcraft": "QuickStack & Craft"
+}

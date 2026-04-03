@@ -1,0 +1,13 @@
+{
+    "required": true,
+    "package": "net.zeronexus.quickstackcraft.neoforge.mixin",
+    "compatibilityLevel": "JAVA_21",
+    "minVersion": "0.8",
+    "mixins": [],
+    "client": [
+        "InventoryScreenMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

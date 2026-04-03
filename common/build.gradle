@@ -1,0 +1,11 @@
+architectury {
+    common(rootProject.enabled_platforms.split(","))
+}
+
+dependencies {
+    // Fabric loader for @Environment annotations and mixin dependencies in common
+    modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+
+    // Architectury API (common module)
+    modApi "dev.architectury:architectury:${rootProject.architectury_api_version}"
+}
