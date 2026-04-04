@@ -2,6 +2,7 @@ package net.zeronexus.quickstackcraft.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
@@ -19,7 +20,7 @@ public abstract class LevelRendererMixin {
 
     @Inject(method = "renderLevel", at = @At("RETURN"))
     private void quickstackcraft$renderContainerHighlights(
-            float partialTick, long finishNanoTime, boolean renderBlockOutline,
+            DeltaTracker deltaTracker, boolean renderBlockOutline,
             Camera camera, GameRenderer gameRenderer, LightTexture lightTexture,
             Matrix4f modelView, Matrix4f projection, CallbackInfo ci) {
 
