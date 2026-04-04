@@ -2,6 +2,7 @@ package net.zeronexus.quickstackcraft.compat.jei;
 
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
+import mezz.jei.api.constants.RecipeTypes;
 import mezz.jei.api.registration.IRecipeTransferRegistration;
 import net.minecraft.resources.ResourceLocation;
 import net.zeronexus.quickstackcraft.QuickStackCraft;
@@ -19,6 +20,11 @@ public class QuickStackCraftJeiPlugin implements IModPlugin {
 
     @Override
     public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
-        registration.addUniversalRecipeTransferHandler(new CraftFromNearbyTransferHandler());
+        // Must use RecipeTypes.CRAFTING (same object) to overwrite JEI's built-in
+        // PlayerRecipeTransferHandler in the (ContainerClass, RecipeType) table
+        registration.addRecipeTransferHandler(
+                new CraftFromNearbyTransferHandler(),
+                RecipeTypes.CRAFTING
+        );
     }
 }

@@ -1,16 +1,20 @@
 package net.zeronexus.quickstackcraft.compat.jei;
 
 import dev.architectury.networking.NetworkManager;
+import mezz.jei.api.constants.RecipeTypes;
 import mezz.jei.api.gui.builder.ITooltipBuilder;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.recipe.RecipeIngredientRole;
+import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.transfer.IRecipeTransferError;
-import mezz.jei.api.recipe.transfer.IUniversalRecipeTransferHandler;
+import mezz.jei.api.recipe.transfer.IRecipeTransferHandler;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.CraftingRecipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.zeronexus.quickstackcraft.network.CraftFromNearbyC2SPacket;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,11 +23,11 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Universal JEI transfer handler: overrides default "missing items" check.
- * Shows a green "+" button for all crafting recipes, pulling ingredients
- * from nearby containers when clicked.
+ * JEI transfer handler that REPLACES JEI's built-in PlayerRecipeTransferHandler.
+ * Must use RecipeTypes.CRAFTING (exact same object) so it overwrites JEI's entry
+ * in the (ContainerClass, RecipeType) lookup table.
  */
-public class CraftFromNearbyTransferHandler implements IUniversalRecipeTransferHandler<InventoryMenu> {
+public class CraftFromNearbyTransferHandler implements IRecipeTransferHandler<InventoryMenu, RecipeHolder<CraftingRecipe>> {
 
     @Override
     public Class<InventoryMenu> getContainerClass() {
@@ -36,18 +40,20 @@ public class CraftFromNearbyTransferHandler implements IUniversalRecipeTransferH
     }
 
     @Override
+    public RecipeType<RecipeHolder<CraftingRecipe>> getRecipeType() {
+        return RecipeTypes.CRAFTING;
+    }
+
+    @Override
     public @Nullable IRecipeTransferError transferRecipe(
-            InventoryMenu container, Object recipe,
+            InventoryMenu menu, RecipeHolder<CraftingRecipe> recipe,
             IRecipeSlotsView recipeSlots, Player player,
             boolean maxTransfer, boolean doTransfer) {
 
-        // Only handle recipes that have crafting inputs
         List<ItemStack> ingredients = extractIngredients(recipeSlots);
-        if (ingredients.stream().allMatch(ItemStack::isEmpty)) {
-            return null; // No inputs, let default handle
-        }
 
         if (!doTransfer) {
+            // COSMETIC: green "+" button, always clickable
             return new CraftFromNearbyAvailable();
         }
 
