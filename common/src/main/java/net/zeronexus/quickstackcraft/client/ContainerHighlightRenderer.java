@@ -3,7 +3,7 @@ package net.zeronexus.quickstackcraft.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.ShapeRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
@@ -60,7 +60,7 @@ public final class ContainerHighlightRenderer {
 
         for (BlockHighlight h : blockHighlights) {
             AABB box = new AABB(h.pos).inflate(0.002); // Slight inflate to avoid z-fighting
-            LevelRenderer.renderLineBox(poseStack, lines,
+            ShapeRenderer.renderLineBox(poseStack, lines,
                     box.minX - cameraPos.x, box.minY - cameraPos.y, box.minZ - cameraPos.z,
                     box.maxX - cameraPos.x, box.maxY - cameraPos.y, box.maxZ - cameraPos.z,
                     R, G, B, A);
@@ -72,7 +72,7 @@ public final class ContainerHighlightRenderer {
                 Entity entity = mc.level.getEntity(h.entityId);
                 if (entity != null) {
                     AABB box = entity.getBoundingBox().inflate(0.002);
-                    LevelRenderer.renderLineBox(poseStack, lines,
+                    ShapeRenderer.renderLineBox(poseStack, lines,
                             box.minX - cameraPos.x, box.minY - cameraPos.y, box.minZ - cameraPos.z,
                             box.maxX - cameraPos.x, box.maxY - cameraPos.y, box.maxZ - cameraPos.z,
                             R, G, B, A);

@@ -283,8 +283,8 @@ public final class ModNetworking {
                 double x = playerPos.x + (target.x - playerPos.x) * t;
                 double y = playerPos.y + (target.y - playerPos.y) * t;
                 double z = playerPos.z + (target.z - playerPos.z) * t;
-                level.sendParticles(player, ParticleTypes.HAPPY_VILLAGER,
-                        true, x, y, z, 1, 0.05, 0.05, 0.05, 0);
+                level.sendParticles(ParticleTypes.HAPPY_VILLAGER,
+                        x, y, z, 1, 0.05, 0.05, 0.05, 0.0);
             }
         }
     }
