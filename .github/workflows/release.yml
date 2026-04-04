@@ -30,13 +30,17 @@ jobs:
         id: version
         run: echo "mod_version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
+      - name: Sanitize branch name
+        id: branch
+        run: echo "safe_name=$(echo '${{ matrix.branch }}' | tr '/' '-')" >> "$GITHUB_OUTPUT"
+
       - name: Build
         run: chmod +x gradlew && ./gradlew collectJars -Pmod_version=${{ steps.version.outputs.mod_version }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-${{ matrix.branch }}
+          name: release-${{ steps.branch.outputs.safe_name }}
           path: quickstackcraft-*.jar
 
   release:

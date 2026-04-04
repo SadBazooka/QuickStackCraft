@@ -25,8 +25,12 @@ jobs:
       - name: Collect jars
         run: ./gradlew collectJars
 
+      - name: Sanitize branch name
+        id: branch
+        run: echo "safe_name=${GITHUB_REF_NAME//\//-}" >> "$GITHUB_OUTPUT"
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: jars-${{ github.ref_name }}
+          name: jars-${{ steps.branch.outputs.safe_name }}
           path: quickstackcraft-*.jar
