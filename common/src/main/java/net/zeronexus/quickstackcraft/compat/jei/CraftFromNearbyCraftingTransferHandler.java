@@ -7,7 +7,7 @@ import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.transfer.IRecipeTransferError;
 import mezz.jei.api.recipe.transfer.IRecipeTransferHandler;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.inventory.CraftingMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingRecipe;
@@ -21,22 +21,22 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * JEI transfer handler for InventoryMenu (2x2 player inventory crafting grid).
- * Replaces JEI's built-in PlayerRecipeTransferHandler so the [+] button
+ * JEI transfer handler for CraftingMenu (3x3 crafting table).
+ * Replaces JEI's built-in CraftingRecipeTransferHandler so the [+] button
  * checks nearby containers for ingredient availability.
  */
-public class CraftFromNearbyTransferHandler implements IRecipeTransferHandler<InventoryMenu, RecipeHolder<CraftingRecipe>> {
+public class CraftFromNearbyCraftingTransferHandler implements IRecipeTransferHandler<CraftingMenu, RecipeHolder<CraftingRecipe>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("QuickStackCraft-JEI");
 
     @Override
-    public Class<InventoryMenu> getContainerClass() {
-        return InventoryMenu.class;
+    public Class<CraftingMenu> getContainerClass() {
+        return CraftingMenu.class;
     }
 
     @Override
-    public Optional<MenuType<InventoryMenu>> getMenuType() {
-        return Optional.empty();
+    public Optional<MenuType<CraftingMenu>> getMenuType() {
+        return Optional.of(MenuType.CRAFTING);
     }
 
     @Override
@@ -46,7 +46,7 @@ public class CraftFromNearbyTransferHandler implements IRecipeTransferHandler<In
 
     @Override
     public @Nullable IRecipeTransferError transferRecipe(
-            InventoryMenu menu, RecipeHolder<CraftingRecipe> recipe,
+            CraftingMenu menu, RecipeHolder<CraftingRecipe> recipe,
             IRecipeSlotsView recipeSlots, Player player,
             boolean maxTransfer, boolean doTransfer) {
 
@@ -56,7 +56,7 @@ public class CraftFromNearbyTransferHandler implements IRecipeTransferHandler<In
             return TransferHelper.checkAvailability(ingredients, player);
         }
 
-        LOGGER.info("[QuickStackCraft] Craft from nearby (inventory): recipe={}", recipe.id());
+        LOGGER.info("[QuickStackCraft] Craft from nearby: recipe={}", recipe.id());
         NetworkManager.sendToServer(new CraftFromNearbyC2SPacket(ingredients));
         return null;
     }

@@ -9,8 +9,12 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import net.zeronexus.quickstackcraft.QuickStackCraft;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.zeronexus.quickstackcraft.client.ClientFavoritesCache;
 import net.zeronexus.quickstackcraft.client.ContainerHighlightRenderer;
+import net.zeronexus.quickstackcraft.client.NearbyItemsCache;
 import net.zeronexus.quickstackcraft.logic.ContainerScanner;
 import net.zeronexus.quickstackcraft.logic.CraftFromNearbyLogic;
 import net.zeronexus.quickstackcraft.logic.DumpLogic;
@@ -19,7 +23,9 @@ import net.zeronexus.quickstackcraft.logic.QuickStackLogic;
 import net.zeronexus.quickstackcraft.logic.TransferResult;
 import net.zeronexus.quickstackcraft.util.ContainerAccess;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public final class ModNetworking {
@@ -69,6 +75,22 @@ public final class ModNetworking {
                 FavoriteSyncS2CPacket.TYPE,
                 FavoriteSyncS2CPacket.CODEC,
                 ModNetworking::handleFavoriteSync
+        );
+
+        // C2S: Nearby Items Scan (for JEI availability)
+        NetworkManager.registerReceiver(
+                NetworkManager.Side.C2S,
+                NearbyItemsScanC2SPacket.TYPE,
+                NearbyItemsScanC2SPacket.CODEC,
+                ModNetworking::handleNearbyItemsScan
+        );
+
+        // S2C: Nearby Items Sync (response to scan)
+        NetworkManager.registerReceiver(
+                NetworkManager.Side.S2C,
+                NearbyItemsSyncS2CPacket.TYPE,
+                NearbyItemsSyncS2CPacket.CODEC,
+                ModNetworking::handleNearbyItemsSync
         );
 
         // S2C: Container Highlights
@@ -166,17 +188,28 @@ public final class ModNetworking {
             List<ContainerAccess> containers = ContainerScanner.findNearby(
                     player.level(), center, DEFAULT_RADIUS, DEFAULT_INCLUDE_ENTITIES);
 
-            // Get crafting grid slots from the player's inventory menu (slots 1-4 for 2x2)
-            // InventoryMenu crafting slots: index 1-4 (0 is result)
+            // Detect which menu is open and get the appropriate crafting grid slots
             List<net.minecraft.world.inventory.Slot> craftSlots = new java.util.ArrayList<>();
-            for (int i = 1; i <= 4; i++) {
-                craftSlots.add(player.inventoryMenu.getSlot(i));
+            net.minecraft.world.inventory.AbstractContainerMenu activeMenu;
+
+            if (player.containerMenu instanceof net.minecraft.world.inventory.CraftingMenu craftingMenu) {
+                // 3x3 crafting table: slots 1-9 (slot 0 is result)
+                activeMenu = craftingMenu;
+                for (int i = 1; i <= 9; i++) {
+                    craftSlots.add(craftingMenu.getSlot(i));
+                }
+            } else {
+                // 2x2 player inventory crafting: slots 1-4 (slot 0 is result)
+                activeMenu = player.inventoryMenu;
+                for (int i = 1; i <= 4; i++) {
+                    craftSlots.add(player.inventoryMenu.getSlot(i));
+                }
             }
 
             CraftFromNearbyLogic.CraftResult result = CraftFromNearbyLogic.execute(
                     player, packet.ingredients(), craftSlots, containers);
 
-            player.inventoryMenu.broadcastChanges();
+            activeMenu.broadcastChanges();
 
             if (result.isComplete()) {
                 player.displayClientMessage(
@@ -193,6 +226,33 @@ public final class ModNetworking {
                         Component.translatable("quickstackcraft.message.craft_no_ingredients"),
                         true);
             }
+        });
+    }
+
+    private static void handleNearbyItemsScan(NearbyItemsScanC2SPacket packet, NetworkManager.PacketContext context) {
+        context.queue(() -> {
+            ServerPlayer player = (ServerPlayer) context.getPlayer();
+            List<ContainerAccess> containers = ContainerScanner.findNearby(
+                    player.level(), player.position(), DEFAULT_RADIUS, DEFAULT_INCLUDE_ENTITIES);
+
+            Map<Item, Integer> available = new HashMap<>();
+            for (ContainerAccess ca : containers) {
+                Container c = ca.container();
+                for (int i = 0; i < c.getContainerSize(); i++) {
+                    ItemStack stack = c.getItem(i);
+                    if (!stack.isEmpty()) {
+                        available.merge(stack.getItem(), stack.getCount(), Integer::sum);
+                    }
+                }
+            }
+
+            NetworkManager.sendToPlayer(player, new NearbyItemsSyncS2CPacket(available));
+        });
+    }
+
+    private static void handleNearbyItemsSync(NearbyItemsSyncS2CPacket packet, NetworkManager.PacketContext context) {
+        context.queue(() -> {
+            NearbyItemsCache.update(packet.items());
         });
     }
 

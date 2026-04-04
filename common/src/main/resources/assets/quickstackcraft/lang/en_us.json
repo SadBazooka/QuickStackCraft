@@ -11,5 +11,6 @@
     "quickstackcraft.message.craft_ready": "Ingredients ready (%d placed)",
     "quickstackcraft.message.craft_partial": "Placed %d of %d ingredients (some missing)",
     "quickstackcraft.message.craft_no_ingredients": "No matching ingredients found nearby",
-    "quickstackcraft.jei.craft_nearby_tooltip": "Click to pull ingredients from nearby containers"
+    "quickstackcraft.jei.craft_nearby_tooltip": "Click to pull ingredients from nearby containers",
+    "quickstackcraft.jei.craft_nearby_missing": "Missing ingredients (checked inventory + nearby containers)"
 }
