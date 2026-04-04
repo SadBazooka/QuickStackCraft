@@ -1,21 +1,16 @@
 package net.zeronexus.quickstackcraft.compat.jei;
 
 import dev.architectury.networking.NetworkManager;
-import mezz.jei.api.constants.RecipeTypes;
 import mezz.jei.api.gui.builder.ITooltipBuilder;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.recipe.RecipeIngredientRole;
-import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.transfer.IRecipeTransferError;
-import mezz.jei.api.recipe.transfer.IRecipeTransferHandler;
-import mezz.jei.api.recipe.transfer.IRecipeTransferHandlerHelper;
+import mezz.jei.api.recipe.transfer.IUniversalRecipeTransferHandler;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.CraftingRecipe;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.zeronexus.quickstackcraft.network.CraftFromNearbyC2SPacket;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,17 +19,11 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * JEI transfer handler: when user clicks "+" on a crafting recipe,
- * sends a packet to the server to pull ingredients from nearby containers.
- * Returns COSMETIC error so the "+" button is always clickable (orange highlight).
+ * Universal JEI transfer handler: overrides default "missing items" check.
+ * Shows a green "+" button for all crafting recipes, pulling ingredients
+ * from nearby containers when clicked.
  */
-public class CraftFromNearbyTransferHandler implements IRecipeTransferHandler<InventoryMenu, RecipeHolder<CraftingRecipe>> {
-
-    private final IRecipeTransferHandlerHelper helper;
-
-    public CraftFromNearbyTransferHandler(IRecipeTransferHandlerHelper helper) {
-        this.helper = helper;
-    }
+public class CraftFromNearbyTransferHandler implements IUniversalRecipeTransferHandler<InventoryMenu> {
 
     @Override
     public Class<InventoryMenu> getContainerClass() {
@@ -47,46 +36,23 @@ public class CraftFromNearbyTransferHandler implements IRecipeTransferHandler<In
     }
 
     @Override
-    public RecipeType<RecipeHolder<CraftingRecipe>> getRecipeType() {
-        return RecipeTypes.CRAFTING;
-    }
-
-    @Override
     public @Nullable IRecipeTransferError transferRecipe(
-            InventoryMenu menu, RecipeHolder<CraftingRecipe> recipe,
+            InventoryMenu container, Object recipe,
             IRecipeSlotsView recipeSlots, Player player,
             boolean maxTransfer, boolean doTransfer) {
 
+        // Only handle recipes that have crafting inputs
         List<ItemStack> ingredients = extractIngredients(recipeSlots);
+        if (ingredients.stream().allMatch(ItemStack::isEmpty)) {
+            return null; // No inputs, let default handle
+        }
 
         if (!doTransfer) {
-            // COSMETIC error: "+" button is clickable with green highlight + tooltip
             return new CraftFromNearbyAvailable();
         }
 
-        // Actually do the transfer
         NetworkManager.sendToServer(new CraftFromNearbyC2SPacket(ingredients));
         return null;
-    }
-
-    /**
-     * COSMETIC error: button is clickable, shows green highlight and tooltip.
-     */
-    private static class CraftFromNearbyAvailable implements IRecipeTransferError {
-        @Override
-        public Type getType() {
-            return Type.COSMETIC;
-        }
-
-        @Override
-        public int getButtonHighlightColor() {
-            return 0x8040FF40; // Green
-        }
-
-        @Override
-        public void getTooltip(ITooltipBuilder tooltip) {
-            tooltip.add(Component.translatable("quickstackcraft.jei.craft_nearby_tooltip"));
-        }
     }
 
     private List<ItemStack> extractIngredients(IRecipeSlotsView recipeSlots) {
@@ -102,5 +68,22 @@ public class CraftFromNearbyTransferHandler implements IRecipeTransferHandler<In
             ingredients.add(ItemStack.EMPTY);
         }
         return ingredients;
+    }
+
+    private static class CraftFromNearbyAvailable implements IRecipeTransferError {
+        @Override
+        public Type getType() {
+            return Type.COSMETIC;
+        }
+
+        @Override
+        public int getButtonHighlightColor() {
+            return 0x8040FF40;
+        }
+
+        @Override
+        public void getTooltip(ITooltipBuilder tooltip) {
+            tooltip.add(Component.translatable("quickstackcraft.jei.craft_nearby_tooltip"));
+        }
     }
 }
