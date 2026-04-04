@@ -6,6 +6,7 @@ import mezz.jei.api.constants.RecipeTypes;
 import mezz.jei.api.registration.IRecipeTransferRegistration;
 import net.minecraft.resources.ResourceLocation;
 import net.zeronexus.quickstackcraft.QuickStackCraft;
+import net.zeronexus.quickstackcraft.compat.jei.CraftFromNearbyCraftingTransferHandler;
 import net.zeronexus.quickstackcraft.compat.jei.CraftFromNearbyTransferHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,9 +29,15 @@ public class QuickStackCraftJeiPlugin implements IModPlugin {
 
     @Override
     public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
-        LOGGER.info("[QuickStackCraft] Registering craft-from-nearby transfer handler");
+        LOGGER.info("[QuickStackCraft] Registering craft-from-nearby transfer handlers (InventoryMenu + CraftingMenu)");
+        // Override JEI's default PlayerRecipeTransferHandler (2x2 player inventory grid)
         registration.addRecipeTransferHandler(
                 new CraftFromNearbyTransferHandler(),
+                RecipeTypes.CRAFTING
+        );
+        // Override JEI's default CraftingRecipeTransferHandler (3x3 crafting table)
+        registration.addRecipeTransferHandler(
+                new CraftFromNearbyCraftingTransferHandler(),
                 RecipeTypes.CRAFTING
         );
     }
