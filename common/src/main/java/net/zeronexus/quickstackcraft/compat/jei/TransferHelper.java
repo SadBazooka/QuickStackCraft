@@ -1,6 +1,7 @@
 package net.zeronexus.quickstackcraft.compat.jei;
 
 import dev.architectury.networking.NetworkManager;
+import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.transfer.IRecipeTransferError;
@@ -12,42 +13,53 @@ import net.zeronexus.quickstackcraft.client.NearbyItemsCache;
 import net.zeronexus.quickstackcraft.network.NearbyItemsScanC2SPacket;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Shared logic for JEI transfer handlers (InventoryMenu and CraftingMenu).
  * Handles ingredient extraction, availability checking, and cache refresh.
+ *
+ * <p>Each crafting input slot may accept many different items (e.g. "any plank", "any dye").
+ * JEI cycles through these visually, but we extract <em>all</em> acceptable items per slot so
+ * the [+] button works whenever the player owns ANY valid variant - not only the one JEI
+ * happens to be displaying at that instant.
  */
 final class TransferHelper {
 
     private TransferHelper() {}
 
-    /** Extract the 9 ingredient ItemStacks from JEI's recipe slot views. */
-    static List<ItemStack> extractIngredients(IRecipeSlotsView recipeSlots) {
-        List<ItemStack> ingredients = new ArrayList<>();
+    /** Hard cap on variants per slot, to keep the craft packet a sane size for huge tags. */
+    static final int MAX_VARIANTS_PER_SLOT = 128;
+
+    /**
+     * Extract, for each crafting input slot, the full list of acceptable ItemStacks.
+     * The returned list has one entry per input slot (in slot order); an empty inner list
+     * means that slot is unused.
+     */
+    static List<List<ItemStack>> extractIngredientOptions(IRecipeSlotsView recipeSlots) {
+        List<List<ItemStack>> perSlot = new ArrayList<>();
         recipeSlots.getSlotViews(RecipeIngredientRole.INPUT).forEach(slotView -> {
-            ItemStack displayed = slotView.getDisplayedIngredient()
-                    .flatMap(typed -> typed.getIngredient() instanceof ItemStack stack
-                            ? Optional.of(stack) : Optional.empty())
-                    .orElse(ItemStack.EMPTY);
-            ingredients.add(displayed.copy());
+            List<ItemStack> options = new ArrayList<>();
+            slotView.getIngredients(VanillaTypes.ITEM_STACK)
+                    .filter(stack -> !stack.isEmpty())
+                    .limit(MAX_VARIANTS_PER_SLOT)
+                    .forEach(stack -> options.add(stack.copy()));
+            perSlot.add(options);
         });
-        while (ingredients.size() < 9) {
-            ingredients.add(ItemStack.EMPTY);
-        }
-        return ingredients;
+        return perSlot;
     }
 
     /**
-     * Check if the recipe ingredients are available from player inventory + nearby containers.
-     * Triggers a server scan if the cache is stale.
+     * Check whether the recipe can be satisfied from player inventory + nearby containers,
+     * where each slot may be filled by ANY of its acceptable variants. Triggers a server
+     * scan if the nearby-items cache is stale.
      *
-     * @return null if all ingredients available, or a COSMETIC/USER_FACING error
+     * @return null if all slots can be satisfied, or a COSMETIC/USER_FACING error
      */
-    static IRecipeTransferError checkAvailability(List<ItemStack> ingredients, Player player) {
+    static IRecipeTransferError checkAvailability(List<List<ItemStack>> options, Player player) {
         // Trigger cache refresh if stale
         long tick = player.level().getGameTime();
         if (NearbyItemsCache.needsRefresh(tick)) {
@@ -58,7 +70,6 @@ final class TransferHelper {
         // Build availability: player inventory + cached nearby container items
         Map<Item, Integer> available = new HashMap<>();
 
-        // Player inventory (live, always accurate)
         Inventory inv = player.getInventory();
         for (int i = 0; i < inv.getContainerSize(); i++) {
             ItemStack stack = inv.getItem(i);
@@ -66,34 +77,41 @@ final class TransferHelper {
                 available.merge(stack.getItem(), stack.getCount(), Integer::sum);
             }
         }
+        NearbyItemsCache.forEachItem((item, count) -> available.merge(item, count, Integer::sum));
 
-        // Nearby containers (cached from last server scan)
-        // Merge in cached counts
-        NearbyItemsCache.forEachItem((item, count) ->
-                available.merge(item, count, Integer::sum));
+        boolean allAvailable = canSatisfy(options, available);
+        return allAvailable ? new CraftFromNearbyAvailable() : new CraftFromNearbyMissing();
+    }
 
-        // Check each ingredient against combined availability
-        Map<Item, Integer> needed = new HashMap<>();
-        for (ItemStack ingredient : ingredients) {
-            if (!ingredient.isEmpty()) {
-                needed.merge(ingredient.getItem(), 1, Integer::sum);
+    /**
+     * Greedy multiset assignment: decide whether every used slot can be filled by some
+     * available variant, accounting for items being consumed across slots. Slots with the
+     * fewest options are assigned first (most-constrained-first) for a better packing.
+     *
+     * <p>Operates on a copy of {@code available} so the caller's map is untouched.
+     */
+    static boolean canSatisfy(List<List<ItemStack>> options, Map<Item, Integer> available) {
+        Map<Item, Integer> pool = new HashMap<>(available);
+
+        List<List<ItemStack>> used = new ArrayList<>();
+        for (List<ItemStack> slot : options) {
+            if (!slot.isEmpty()) used.add(slot);
+        }
+        used.sort(Comparator.comparingInt(List::size));
+
+        for (List<ItemStack> slot : used) {
+            boolean filled = false;
+            for (ItemStack variant : slot) {
+                Item item = variant.getItem();
+                int have = pool.getOrDefault(item, 0);
+                if (have > 0) {
+                    pool.put(item, have - 1);
+                    filled = true;
+                    break;
+                }
             }
+            if (!filled) return false;
         }
-
-        boolean allAvailable = true;
-        for (Map.Entry<Item, Integer> entry : needed.entrySet()) {
-            if (available.getOrDefault(entry.getKey(), 0) < entry.getValue()) {
-                allAvailable = false;
-                break;
-            }
-        }
-
-        if (allAvailable) {
-            // All ingredients found - show green button with our tooltip
-            return new CraftFromNearbyAvailable();
-        } else {
-            // Not enough ingredients anywhere - let JEI show default "missing items"
-            return new CraftFromNearbyMissing();
-        }
+        return true;
     }
 }

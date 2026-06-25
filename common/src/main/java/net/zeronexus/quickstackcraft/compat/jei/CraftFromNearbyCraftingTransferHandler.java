@@ -50,14 +50,14 @@ public class CraftFromNearbyCraftingTransferHandler implements IRecipeTransferHa
             IRecipeSlotsView recipeSlots, Player player,
             boolean maxTransfer, boolean doTransfer) {
 
-        List<ItemStack> ingredients = TransferHelper.extractIngredients(recipeSlots);
+        List<List<ItemStack>> options = TransferHelper.extractIngredientOptions(recipeSlots);
 
         if (!doTransfer) {
-            return TransferHelper.checkAvailability(ingredients, player);
+            return TransferHelper.checkAvailability(options, player);
         }
 
         LOGGER.info("[QuickStackCraft] Craft from nearby: recipe={}", recipe.id());
-        NetworkManager.sendToServer(new CraftFromNearbyC2SPacket(ingredients));
+        NetworkManager.sendToServer(new CraftFromNearbyC2SPacket(options));
         return null;
     }
 }

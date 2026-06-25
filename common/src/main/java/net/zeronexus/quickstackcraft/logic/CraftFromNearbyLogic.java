@@ -3,58 +3,82 @@ package net.zeronexus.quickstackcraft.logic;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.zeronexus.quickstackcraft.util.ContainerAccess;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
- * Pulls crafting ingredients from player inventory and nearby containers
- * into the player's crafting grid.
+ * Pulls crafting ingredients from player inventory and nearby containers into the player's
+ * crafting grid.
+ *
+ * <p>Each crafting slot may accept several variants (e.g. any plank). For each slot we place
+ * whichever variant the player actually owns - checking the live player inventory first, then
+ * nearby containers. Items are consumed as they're placed, so cross-slot contention is handled
+ * naturally; we fill the most-constrained slots (fewest variants) first to maximise success.
  */
 public final class CraftFromNearbyLogic {
 
     private CraftFromNearbyLogic() {}
 
     /**
-     * @param player the player
-     * @param ingredients 9 ItemStacks representing what each crafting slot needs
+     * @param player     the player
+     * @param slotOptions per crafting slot, the list of acceptable item variants (empty = unused)
      * @param craftSlots the crafting grid slots (from InventoryMenu or CraftingMenu)
      * @param containers nearby containers to search
-     * @return number of ingredients successfully placed
+     * @return how many slots were filled
      */
-    public static CraftResult execute(Player player, List<ItemStack> ingredients,
+    public static CraftResult execute(Player player, List<List<ItemStack>> slotOptions,
                                       List<Slot> craftSlots, List<ContainerAccess> containers) {
         Inventory playerInv = player.getInventory();
-        int placed = 0;
-        int containersUsed = 0;
-        boolean usedContainer = false;
 
-        for (int i = 0; i < Math.min(ingredients.size(), craftSlots.size()); i++) {
-            ItemStack wanted = ingredients.get(i);
-            if (wanted.isEmpty()) continue;
-
-            Slot craftSlot = craftSlots.get(i);
-
-            // Clear existing item in the craft slot back to inventory first
+        // Return anything currently in the grid back to the inventory before refilling.
+        for (Slot craftSlot : craftSlots) {
             if (!craftSlot.getItem().isEmpty()) {
                 ItemStack existing = craftSlot.remove(craftSlot.getItem().getCount());
                 playerInv.add(existing);
             }
+        }
 
-            // Try player inventory first
-            ItemStack found = extractOne(playerInv, wanted);
+        int slotCount = Math.min(slotOptions.size(), craftSlots.size());
 
-            // Then try nearby containers
+        // Fill most-constrained slots first (fewest acceptable variants).
+        List<Integer> order = new ArrayList<>();
+        for (int i = 0; i < slotCount; i++) {
+            if (!slotOptions.get(i).isEmpty()) order.add(i);
+        }
+        order.sort(Comparator.comparingInt(i -> slotOptions.get(i).size()));
+
+        int placed = 0;
+        int needed = order.size();
+        boolean usedContainer = false;
+
+        for (int i : order) {
+            List<ItemStack> variants = slotOptions.get(i);
+            Slot craftSlot = craftSlots.get(i);
+
+            ItemStack found = ItemStack.EMPTY;
+
+            // Try player inventory first, across all acceptable variants.
+            for (ItemStack variant : variants) {
+                found = extractOne(playerInv, variant);
+                if (!found.isEmpty()) break;
+            }
+
+            // Then nearby containers.
             if (found.isEmpty()) {
-                for (ContainerAccess ca : containers) {
-                    found = extractOne(ca.container(), wanted);
-                    if (!found.isEmpty()) {
-                        usedContainer = true;
-                        ca.container().setChanged();
-                        break;
+                outer:
+                for (ItemStack variant : variants) {
+                    for (ContainerAccess ca : containers) {
+                        found = extractOne(ca.container(), variant);
+                        if (!found.isEmpty()) {
+                            usedContainer = true;
+                            ca.container().setChanged();
+                            break outer;
+                        }
                     }
                 }
             }
@@ -65,8 +89,7 @@ public final class CraftFromNearbyLogic {
             }
         }
 
-        return new CraftResult(placed, ingredients.stream().filter(s -> !s.isEmpty()).count(),
-                usedContainer);
+        return new CraftResult(placed, needed, usedContainer);
     }
 
     /**

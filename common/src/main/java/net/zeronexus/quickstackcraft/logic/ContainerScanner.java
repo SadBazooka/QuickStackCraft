@@ -117,7 +117,7 @@ public final class ContainerScanner {
                 if (type == ChestType.LEFT) {
                     processed.add(pos.relative(ChestBlock.getConnectedDirection(state)));
                 }
-                return merged;
+                return StorageFilter.isEligible(state, be, merged) ? merged : null;
             }
             return null;
         }
@@ -125,14 +125,14 @@ public final class ContainerScanner {
         // Vanilla Container interface (chests, barrels, hoppers, etc.)
         if (be instanceof Container c) {
             processed.add(pos);
-            return c;
+            return StorageFilter.isEligible(state, be, c) ? c : null;
         }
 
         // Modded containers: try platform-specific capability (IItemHandler on NeoForge)
         Container capContainer = getContainerFromCapability(level, pos);
         if (capContainer != null) {
             processed.add(pos);
-            return capContainer;
+            return StorageFilter.isEligible(state, be, capContainer) ? capContainer : null;
         }
 
         return null;

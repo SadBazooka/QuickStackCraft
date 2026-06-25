@@ -35,3 +35,12 @@ type = "required"
 versionRange = "[${architectury_api_version},)"
 ordering = "AFTER"
 side = "BOTH"
+
+# Optional: Sophisticated Backpacks/Core integration (backpack stack/dump). Load after it so
+# our soft-compat mixin's target class is present when present.
+[[dependencies.${mod_id}]]
+modId = "sophisticatedcore"
+type = "optional"
+versionRange = "*"
+ordering = "AFTER"
+side = "BOTH"

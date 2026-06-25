@@ -61,6 +61,14 @@ public final class ModNetworking {
                 ModNetworking::handleCraftFromNearby
         );
 
+        // C2S: Stack/Dump from open storage (e.g. Sophisticated Backpacks)
+        NetworkManager.registerReceiver(
+                NetworkManager.Side.C2S,
+                StorageTransferC2SPacket.TYPE,
+                StorageTransferC2SPacket.CODEC,
+                ModNetworking::handleStorageTransfer
+        );
+
         // C2S: Toggle Favorite
         NetworkManager.registerReceiver(
                 NetworkManager.Side.C2S,
@@ -207,7 +215,7 @@ public final class ModNetworking {
             }
 
             CraftFromNearbyLogic.CraftResult result = CraftFromNearbyLogic.execute(
-                    player, packet.ingredients(), craftSlots, containers);
+                    player, packet.slotOptions(), craftSlots, containers);
 
             activeMenu.broadcastChanges();
 
@@ -224,6 +232,40 @@ public final class ModNetworking {
             } else {
                 player.displayClientMessage(
                         Component.translatable("quickstackcraft.message.craft_no_ingredients"),
+                        true);
+            }
+        });
+    }
+
+    private static void handleStorageTransfer(StorageTransferC2SPacket packet, NetworkManager.PacketContext context) {
+        context.queue(() -> {
+            ServerPlayer player = (ServerPlayer) context.getPlayer();
+
+            List<net.minecraft.world.inventory.Slot> sourceSlots =
+                    net.zeronexus.quickstackcraft.logic.OpenStorageAccess.getOpenStorageSlots(player);
+            if (sourceSlots.isEmpty()) {
+                return; // No supported storage open; nothing to do.
+            }
+
+            List<ContainerAccess> containers = ContainerScanner.findNearby(
+                    player.level(), player.position(), DEFAULT_RADIUS, DEFAULT_INCLUDE_ENTITIES);
+
+            TransferResult result = net.zeronexus.quickstackcraft.logic.SlotTransferLogic.execute(
+                    sourceSlots, containers, packet.dumpAll());
+
+            player.containerMenu.broadcastChanges();
+
+            if (result.didSomething()) {
+                player.displayClientMessage(
+                        Component.translatable(
+                                packet.dumpAll() ? "quickstackcraft.message.dump" : "quickstackcraft.message.quick_stack",
+                                result.itemsMoved(), result.containersUsed()),
+                        true);
+                sendHighlights(player, result);
+            } else {
+                player.displayClientMessage(
+                        Component.translatable(
+                                packet.dumpAll() ? "quickstackcraft.message.nothing_to_dump" : "quickstackcraft.message.nothing_to_stack"),
                         true);
             }
         });
