@@ -2,6 +2,13 @@
 
 All notable changes to this fork are documented here. This fork targets **Minecraft 1.21.1 (NeoForge)**.
 
+## v0.1.3
+
+- Recognise **Sophisticated Storage shulker boxes and limited barrels** as storage. Their chests
+  and barrels were already covered (via `c:chests` / `c:barrels`), but the mod doesn't tag its
+  shulker boxes or limited barrels, so under the v0.1.2 strict allowlist they were wrongly skipped.
+  They're now included in the shipped `quickstackcraft:storage` tag (all tiers).
+
 ## v0.1.2
 
 ### Items no longer lost to machines
