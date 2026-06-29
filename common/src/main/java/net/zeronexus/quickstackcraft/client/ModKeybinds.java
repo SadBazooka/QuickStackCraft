@@ -23,5 +23,19 @@ public final class ModKeybinds {
             CATEGORY
     );
 
+    /** Highlight every eligible storage container in range (no transfer). */
+    public static final KeyMapping PREVIEW_TARGETS = new KeyMapping(
+            "key.quickstackcraft.preview_targets",
+            InputConstants.UNKNOWN.getValue(), // unbound by default
+            CATEGORY
+    );
+
+    /** Toggle the block you're looking at in the storage whitelist. */
+    public static final KeyMapping TOGGLE_TARGET = new KeyMapping(
+            "key.quickstackcraft.toggle_target",
+            InputConstants.UNKNOWN.getValue(), // unbound by default
+            CATEGORY
+    );
+
     private ModKeybinds() {}
 }

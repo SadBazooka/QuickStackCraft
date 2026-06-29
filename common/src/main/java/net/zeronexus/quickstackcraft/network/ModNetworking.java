@@ -15,13 +15,20 @@ import net.minecraft.world.item.ItemStack;
 import net.zeronexus.quickstackcraft.client.ClientFavoritesCache;
 import net.zeronexus.quickstackcraft.client.ContainerHighlightRenderer;
 import net.zeronexus.quickstackcraft.client.NearbyItemsCache;
+import net.zeronexus.quickstackcraft.config.QscConfig;
 import net.zeronexus.quickstackcraft.logic.ContainerScanner;
 import net.zeronexus.quickstackcraft.logic.CraftFromNearbyLogic;
 import net.zeronexus.quickstackcraft.logic.DumpLogic;
 import net.zeronexus.quickstackcraft.logic.FavoritesManager;
 import net.zeronexus.quickstackcraft.logic.QuickStackLogic;
+import net.zeronexus.quickstackcraft.logic.RuntimeTargets;
 import net.zeronexus.quickstackcraft.logic.TransferResult;
 import net.zeronexus.quickstackcraft.util.ContainerAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +37,6 @@ import java.util.Set;
 
 public final class ModNetworking {
 
-    private static final int DEFAULT_RADIUS = 8;
     private static final boolean DEFAULT_SKIP_HOTBAR = true;
     private static final boolean DEFAULT_INCLUDE_ENTITIES = true;
 
@@ -67,6 +73,22 @@ public final class ModNetworking {
                 StorageTransferC2SPacket.TYPE,
                 StorageTransferC2SPacket.CODEC,
                 ModNetworking::handleStorageTransfer
+        );
+
+        // C2S: Toggle looked-at block in whitelist/blacklist
+        NetworkManager.registerReceiver(
+                NetworkManager.Side.C2S,
+                ToggleTargetC2SPacket.TYPE,
+                ToggleTargetC2SPacket.CODEC,
+                ModNetworking::handleToggleTarget
+        );
+
+        // C2S: Preview eligible storage targets (highlights, no transfer)
+        NetworkManager.registerReceiver(
+                NetworkManager.Side.C2S,
+                PreviewTargetsC2SPacket.TYPE,
+                PreviewTargetsC2SPacket.CODEC,
+                ModNetworking::handlePreviewTargets
         );
 
         // C2S: Toggle Favorite
@@ -116,7 +138,7 @@ public final class ModNetworking {
             Vec3 center = player.position();
 
             List<ContainerAccess> containers = ContainerScanner.findNearby(
-                    player.level(), center, DEFAULT_RADIUS, DEFAULT_INCLUDE_ENTITIES);
+                    player.level(), center, QscConfig.radius, DEFAULT_INCLUDE_ENTITIES);
 
             TransferResult result = QuickStackLogic.execute(
                     player, containers, DEFAULT_SKIP_HOTBAR,
@@ -144,7 +166,7 @@ public final class ModNetworking {
             Vec3 center = player.position();
 
             List<ContainerAccess> containers = ContainerScanner.findNearby(
-                    player.level(), center, DEFAULT_RADIUS, DEFAULT_INCLUDE_ENTITIES);
+                    player.level(), center, QscConfig.radius, DEFAULT_INCLUDE_ENTITIES);
 
             TransferResult result = DumpLogic.execute(
                     player, containers, DEFAULT_SKIP_HOTBAR,
@@ -194,7 +216,7 @@ public final class ModNetworking {
             Vec3 center = player.position();
 
             List<ContainerAccess> containers = ContainerScanner.findNearby(
-                    player.level(), center, DEFAULT_RADIUS, DEFAULT_INCLUDE_ENTITIES);
+                    player.level(), center, QscConfig.radius, DEFAULT_INCLUDE_ENTITIES);
 
             // Detect which menu is open and get the appropriate crafting grid slots
             List<net.minecraft.world.inventory.Slot> craftSlots = new java.util.ArrayList<>();
@@ -248,7 +270,7 @@ public final class ModNetworking {
             }
 
             List<ContainerAccess> containers = ContainerScanner.findNearby(
-                    player.level(), player.position(), DEFAULT_RADIUS, DEFAULT_INCLUDE_ENTITIES);
+                    player.level(), player.position(), QscConfig.radius, DEFAULT_INCLUDE_ENTITIES);
 
             TransferResult result = net.zeronexus.quickstackcraft.logic.SlotTransferLogic.execute(
                     sourceSlots, containers, packet.dumpAll());
@@ -271,11 +293,76 @@ public final class ModNetworking {
         });
     }
 
+    private static void handleToggleTarget(ToggleTargetC2SPacket packet, NetworkManager.PacketContext context) {
+        context.queue(() -> {
+            ServerPlayer player = (ServerPlayer) context.getPlayer();
+            // The lists are server-wide, so gate edits behind op permission (always true in singleplayer).
+            if (!player.hasPermissions(2)) {
+                player.displayClientMessage(Component.translatable("quickstackcraft.message.no_permission"), true);
+                return;
+            }
+
+            BlockHitResult hit = raycastBlock(player);
+            if (hit.getType() != HitResult.Type.BLOCK) {
+                player.displayClientMessage(Component.translatable("quickstackcraft.message.no_block"), true);
+                return;
+            }
+
+            BlockState state = player.level().getBlockState(hit.getBlockPos());
+            ResourceLocation id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+            Component name = state.getBlock().getName();
+
+            if (packet.blacklist()) {
+                boolean added;
+                if (RuntimeTargets.isBlacklisted(id)) { RuntimeTargets.removeBlacklist(id); added = false; }
+                else { RuntimeTargets.addBlacklist(id); added = true; }
+                player.displayClientMessage(Component.translatable(
+                        added ? "quickstackcraft.message.blacklist_added" : "quickstackcraft.message.blacklist_removed", name), true);
+            } else {
+                boolean added;
+                if (RuntimeTargets.isWhitelisted(id)) { RuntimeTargets.removeWhitelist(id); added = false; }
+                else { RuntimeTargets.addWhitelist(id); added = true; }
+                player.displayClientMessage(Component.translatable(
+                        added ? "quickstackcraft.message.whitelist_added" : "quickstackcraft.message.whitelist_removed", name), true);
+            }
+        });
+    }
+
+    private static void handlePreviewTargets(PreviewTargetsC2SPacket packet, NetworkManager.PacketContext context) {
+        context.queue(() -> {
+            ServerPlayer player = (ServerPlayer) context.getPlayer();
+            List<ContainerAccess> containers = ContainerScanner.findNearby(
+                    player.level(), player.position(), QscConfig.radius, DEFAULT_INCLUDE_ENTITIES);
+
+            List<BlockPos> blocks = new java.util.ArrayList<>();
+            List<Integer> entities = new java.util.ArrayList<>();
+            for (ContainerAccess ca : containers) {
+                if (ca.isBlockContainer()) blocks.add(ca.blockPos());
+                else if (ca.entity() != null) entities.add(ca.entity().getId());
+            }
+
+            if (blocks.isEmpty() && entities.isEmpty()) {
+                player.displayClientMessage(Component.translatable("quickstackcraft.message.no_targets"), true);
+            } else {
+                NetworkManager.sendToPlayer(player, new ContainerHighlightS2CPacket(blocks, entities));
+                player.displayClientMessage(Component.translatable("quickstackcraft.message.preview", blocks.size() + entities.size()), true);
+            }
+        });
+    }
+
+    /** Raytrace the block the player is looking at (server-side). */
+    private static BlockHitResult raycastBlock(ServerPlayer player) {
+        Vec3 eye = player.getEyePosition(1.0f);
+        Vec3 end = eye.add(player.getViewVector(1.0f).scale(6.0));
+        return player.level().clip(new ClipContext(eye, end,
+                ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
+    }
+
     private static void handleNearbyItemsScan(NearbyItemsScanC2SPacket packet, NetworkManager.PacketContext context) {
         context.queue(() -> {
             ServerPlayer player = (ServerPlayer) context.getPlayer();
             List<ContainerAccess> containers = ContainerScanner.findNearby(
-                    player.level(), player.position(), DEFAULT_RADIUS, DEFAULT_INCLUDE_ENTITIES);
+                    player.level(), player.position(), QscConfig.radius, DEFAULT_INCLUDE_ENTITIES);
 
             Map<Item, Integer> available = new HashMap<>();
             for (ContainerAccess ca : containers) {

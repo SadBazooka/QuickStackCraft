@@ -8,11 +8,14 @@ import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.zeronexus.quickstackcraft.QuickStackCraft;
 import net.zeronexus.quickstackcraft.client.ModKeybinds;
 import net.zeronexus.quickstackcraft.logic.neoforge.FavoritesManagerImpl;
+import net.zeronexus.quickstackcraft.neoforge.command.QscCommands;
 import net.zeronexus.quickstackcraft.neoforge.config.NeoConfig;
+import net.zeronexus.quickstackcraft.neoforge.config.RuntimeTargetsStore;
 import net.zeronexus.quickstackcraft.network.ModNetworking;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -25,6 +28,9 @@ public class QuickStackCraftNeoForge {
         // Register the config file (config/quickstackcraft-common.toml) - global and easy to edit.
         modContainer.registerConfig(ModConfig.Type.COMMON, NeoConfig.SPEC);
 
+        // Load the in-game-editable whitelist/blacklist file and wire up saving.
+        RuntimeTargetsStore.init();
+
         // Register attachment types
         FavoritesManagerImpl.ATTACHMENTS.register(modEventBus);
 
@@ -34,8 +40,13 @@ public class QuickStackCraftNeoForge {
         modEventBus.addListener(this::onConfigLoad);
         modEventBus.addListener(this::onConfigReload);
 
-        // Game event: sync favorites on login
+        // Game events
         NeoForge.EVENT_BUS.addListener(this::onPlayerLogin);
+        NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
+    }
+
+    private void onRegisterCommands(RegisterCommandsEvent event) {
+        QscCommands.register(event.getDispatcher());
     }
 
     private void onConfigLoad(ModConfigEvent.Loading event) {
@@ -54,11 +65,16 @@ public class QuickStackCraftNeoForge {
         if (net.neoforged.fml.ModList.get().isLoaded("sophisticatedbackpacks")) {
             net.zeronexus.quickstackcraft.neoforge.client.SbBackpackButtons.register();
         }
+
+        // World keybind polling (Quick Stack / Dump / Preview / Toggle outside of GUIs)
+        net.zeronexus.quickstackcraft.neoforge.client.QscClientInput.register();
     }
 
     private void registerKeybinds(RegisterKeyMappingsEvent event) {
         event.register(ModKeybinds.QUICK_STACK);
         event.register(ModKeybinds.DUMP_ALL);
+        event.register(ModKeybinds.PREVIEW_TARGETS);
+        event.register(ModKeybinds.TOGGLE_TARGET);
     }
 
     private void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {

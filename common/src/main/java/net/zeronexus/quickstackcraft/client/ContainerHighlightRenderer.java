@@ -10,18 +10,16 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.zeronexus.quickstackcraft.config.QscConfig;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Client-side renderer for highlighting containers that received items.
- * Stores highlight targets with expiry timestamps and renders gold outlines.
+ * Client-side renderer for highlighting containers (after a transfer, or via the preview keybind).
+ * Outline colour, opacity and duration are read from the config.
  */
 public final class ContainerHighlightRenderer {
-
-    private static final long HIGHLIGHT_DURATION_MS = 3000;
-    private static final float R = 1.0f, G = 0.84f, B = 0.0f, A = 0.8f; // Gold
 
     private static final List<BlockHighlight> blockHighlights = new ArrayList<>();
     private static final List<EntityHighlight> entityHighlights = new ArrayList<>();
@@ -29,7 +27,7 @@ public final class ContainerHighlightRenderer {
     private ContainerHighlightRenderer() {}
 
     public static void onHighlightReceived(List<BlockPos> positions, List<Integer> entityIds) {
-        long expiry = System.currentTimeMillis() + HIGHLIGHT_DURATION_MS;
+        long expiry = System.currentTimeMillis() + Math.max(100, QscConfig.highlightDurationMs);
         blockHighlights.clear();
         entityHighlights.clear();
         for (BlockPos pos : positions) {
@@ -56,6 +54,12 @@ public final class ContainerHighlightRenderer {
     public static void renderHighlights(PoseStack poseStack, MultiBufferSource bufferSource, Vec3 cameraPos) {
         if (!hasHighlights()) return;
 
+        int rgb = parseColor(QscConfig.highlightColorHex);
+        float r = ((rgb >> 16) & 0xFF) / 255f;
+        float g = ((rgb >> 8) & 0xFF) / 255f;
+        float b = (rgb & 0xFF) / 255f;
+        float a = (float) Math.max(0.0, Math.min(1.0, QscConfig.highlightAlpha));
+
         VertexConsumer lines = bufferSource.getBuffer(RenderType.lines());
 
         for (BlockHighlight h : blockHighlights) {
@@ -63,7 +67,7 @@ public final class ContainerHighlightRenderer {
             LevelRenderer.renderLineBox(poseStack, lines,
                     box.minX - cameraPos.x, box.minY - cameraPos.y, box.minZ - cameraPos.z,
                     box.maxX - cameraPos.x, box.maxY - cameraPos.y, box.maxZ - cameraPos.z,
-                    R, G, B, A);
+                    r, g, b, a);
         }
 
         Minecraft mc = Minecraft.getInstance();
@@ -75,9 +79,17 @@ public final class ContainerHighlightRenderer {
                     LevelRenderer.renderLineBox(poseStack, lines,
                             box.minX - cameraPos.x, box.minY - cameraPos.y, box.minZ - cameraPos.z,
                             box.maxX - cameraPos.x, box.maxY - cameraPos.y, box.maxZ - cameraPos.z,
-                            R, G, B, A);
+                            r, g, b, a);
                 }
             }
+        }
+    }
+
+    private static int parseColor(String hex) {
+        try {
+            return Integer.parseInt(hex.replace("#", "").trim(), 16) & 0xFFFFFF;
+        } catch (NumberFormatException e) {
+            return 0xFFD700; // gold fallback
         }
     }
 
