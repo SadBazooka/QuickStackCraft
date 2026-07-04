@@ -1,0 +1,6 @@
+# Set to true if you'd rather also allow free-form issues without a template.
+blank_issues_enabled: false
+contact_links:
+  - name: Original mod (QuickStack & Craft by ZeroTheAbsolute)
+    url: https://www.curseforge.com/minecraft/mc-mods/quickstack-craft
+    about: This is a fork. For the original mod (and general questions about it), see its page.
