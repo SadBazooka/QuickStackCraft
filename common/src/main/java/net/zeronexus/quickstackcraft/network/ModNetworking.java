@@ -142,7 +142,7 @@ public final class ModNetworking {
 
             TransferResult result = QuickStackLogic.execute(
                     player, containers, DEFAULT_SKIP_HOTBAR,
-                    slot -> FavoritesManager.isFavorited(player, slot));
+                    slot -> FavoritesManager.isFavorited(player, slot) || packet.isLocked(slot));
 
             player.containerMenu.broadcastChanges();
 
@@ -170,7 +170,7 @@ public final class ModNetworking {
 
             TransferResult result = DumpLogic.execute(
                     player, containers, DEFAULT_SKIP_HOTBAR,
-                    slot -> FavoritesManager.isFavorited(player, slot));
+                    slot -> FavoritesManager.isFavorited(player, slot) || packet.isLocked(slot));
 
             player.containerMenu.broadcastChanges();
 

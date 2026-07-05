@@ -13,6 +13,7 @@ import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.zeronexus.quickstackcraft.client.ClientFavoritesCache;
 import net.zeronexus.quickstackcraft.client.ModKeybinds;
+import net.zeronexus.quickstackcraft.client.compat.itemlocks.ItemLocksCompat;
 import net.zeronexus.quickstackcraft.network.DumpC2SPacket;
 import net.zeronexus.quickstackcraft.network.FavoriteToggleC2SPacket;
 import net.zeronexus.quickstackcraft.network.QuickStackC2SPacket;
@@ -38,13 +39,13 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen<Inven
         int btnSize = 12;
 
         quickstackcraft$quickStackButton = Button.builder(Component.literal("Q"), btn -> {
-            NetworkManager.sendToServer(new QuickStackC2SPacket());
+            NetworkManager.sendToServer(new QuickStackC2SPacket(ItemLocksCompat.lockedMask()));
         }).bounds(btnX, btnY, btnSize, btnSize)
           .tooltip(Tooltip.create(Component.translatable("quickstackcraft.button.quick_stack")))
           .build();
 
         quickstackcraft$dumpButton = Button.builder(Component.literal("D"), btn -> {
-            NetworkManager.sendToServer(new DumpC2SPacket());
+            NetworkManager.sendToServer(new DumpC2SPacket(ItemLocksCompat.lockedMask()));
         }).bounds(btnX + btnSize + 2, btnY, btnSize, btnSize)
           .tooltip(Tooltip.create(Component.translatable("quickstackcraft.button.dump_all")))
           .build();
@@ -83,10 +84,10 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen<Inven
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
     private void quickstackcraft$onKeyPressed(int keyCode, int scanCode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
         if (ModKeybinds.QUICK_STACK.matches(keyCode, scanCode)) {
-            NetworkManager.sendToServer(new QuickStackC2SPacket());
+            NetworkManager.sendToServer(new QuickStackC2SPacket(ItemLocksCompat.lockedMask()));
             cir.setReturnValue(true);
         } else if (ModKeybinds.DUMP_ALL.matches(keyCode, scanCode)) {
-            NetworkManager.sendToServer(new DumpC2SPacket());
+            NetworkManager.sendToServer(new DumpC2SPacket(ItemLocksCompat.lockedMask()));
             cir.setReturnValue(true);
         }
     }

@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.zeronexus.quickstackcraft.client.ModKeybinds;
+import net.zeronexus.quickstackcraft.client.compat.itemlocks.ItemLocksCompat;
 import net.zeronexus.quickstackcraft.network.DumpC2SPacket;
 import net.zeronexus.quickstackcraft.network.PreviewTargetsC2SPacket;
 import net.zeronexus.quickstackcraft.network.QuickStackC2SPacket;
@@ -28,10 +29,10 @@ public final class QscClientInput {
         if (mc.player == null || mc.screen != null) return;
 
         while (ModKeybinds.QUICK_STACK.consumeClick()) {
-            NetworkManager.sendToServer(new QuickStackC2SPacket());
+            NetworkManager.sendToServer(new QuickStackC2SPacket(ItemLocksCompat.lockedMask()));
         }
         while (ModKeybinds.DUMP_ALL.consumeClick()) {
-            NetworkManager.sendToServer(new DumpC2SPacket());
+            NetworkManager.sendToServer(new DumpC2SPacket(ItemLocksCompat.lockedMask()));
         }
         while (ModKeybinds.PREVIEW_TARGETS.consumeClick()) {
             NetworkManager.sendToServer(new PreviewTargetsC2SPacket());

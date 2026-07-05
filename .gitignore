@@ -18,3 +18,4 @@ _release/
 
 # Local build logs
 build_log*.txt
+build_*.txt

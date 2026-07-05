@@ -4,10 +4,18 @@ All notable changes to this fork are documented here. This fork targets **Minecr
 
 ## v0.1.3
 
-- Recognise **Sophisticated Storage shulker boxes and limited barrels** as storage. Their chests
-  and barrels were already covered (via `c:chests` / `c:barrels`), but the mod doesn't tag its
-  shulker boxes or limited barrels, so under the v0.1.2 strict allowlist they were wrongly skipped.
-  They're now included in the shipped `quickstackcraft:storage` tag (all tiers).
+- **ItemLocks compatibility** — Quick Stack and Dump now leave alone any inventory slot you've
+  locked with the [ItemLocks](https://www.curseforge.com/minecraft/mc-mods/itemlocks) mod. Since
+  ItemLocks is the shared "lock layer" (ClientSort respects it too), locking an item once protects
+  it everywhere. Implemented via reflection, so there's no hard dependency — it does nothing if
+  ItemLocks isn't installed.
+- **Favorites now work in every container screen** — the gold favorite-slot overlay, and Alt+click
+  to favorite/unfavorite, previously only worked in the player inventory screen. Both now work on
+  your inventory slots in chests, backpacks, and any other container GUI too.
+- **Sophisticated Storage shulker boxes and limited barrels** are now recognised as storage. Their
+  chests and barrels were already covered (via `c:chests` / `c:barrels`), but the mod doesn't tag
+  its shulker boxes or limited barrels, so under the v0.1.2 strict allowlist they were wrongly
+  skipped. They're now included in the shipped `quickstackcraft:storage` tag (all tiers).
 
 ## v0.1.2
 

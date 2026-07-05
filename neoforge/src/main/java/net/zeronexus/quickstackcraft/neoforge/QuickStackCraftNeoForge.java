@@ -68,6 +68,9 @@ public class QuickStackCraftNeoForge {
 
         // World keybind polling (Quick Stack / Dump / Preview / Toggle outside of GUIs)
         net.zeronexus.quickstackcraft.neoforge.client.QscClientInput.register();
+
+        // Favorite-slot highlight on every container screen (chests, backpacks, etc.), not just the inventory
+        net.zeronexus.quickstackcraft.neoforge.client.QscFavoritesRenderer.register();
     }
 
     private void registerKeybinds(RegisterKeyMappingsEvent event) {
