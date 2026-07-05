@@ -17,7 +17,8 @@ full fork with new features, safety fixes, and mod integrations.
 - **Quick Stack to Nearby** — deposit items into nearby containers that already hold matching
   items (fullest containers first).
 - **Dump All** — deposit all non-favorited inventory items into nearby storage with space.
-- **Slot Favorites** — Alt+click a slot to protect it from quick stack / dump. Persists through death.
+- **Slot Favorites** — Alt+click a slot to protect it from quick stack / dump. Works (highlight and
+  toggle) in your inventory **and any container screen** — chests, backpacks, etc. Persists through death.
 - **Craft from Nearby (JEI)** — the `[+]` button checks your inventory **and** nearby containers
   for ingredients. Matches **any acceptable variant** of a recipe, so it fires immediately instead
   of waiting for JEI to cycle to an item you happen to own.
@@ -26,6 +27,10 @@ full fork with new features, safety fixes, and mod integrations.
 - **Storage-safe targeting** — only deposits into real storage (chests, barrels, shulkers, large
   modded inventories). Machines, generators, and furnaces are excluded so items can't be consumed
   or lost.
+- **ItemLocks compatibility** — respects slots locked with the
+  [ItemLocks](https://www.curseforge.com/minecraft/mc-mods/itemlocks) mod, so locked items are never
+  quick-stacked or dumped. ItemLocks is the shared lock layer, so this also lines up with
+  [ClientSort](https://www.curseforge.com/minecraft/mc-mods/clientsort). Soft dependency (reflection).
 - **Container highlights** — containers that received items glow with a gold outline + particle trail.
 
 ## What's new in this fork
@@ -40,6 +45,8 @@ full fork with new features, safety fixes, and mod integrations.
   whichever variant you actually own.
 - **Sophisticated Backpacks** stack/dump support (NeoForge), added via a NeoForge `ScreenEvent`
   hook so it needs no hard dependency.
+- **ItemLocks compatibility** and favorites that work in every container screen (not just the
+  player inventory).
 
 ## Configuration
 
@@ -63,6 +70,8 @@ full fork with new features, safety fixes, and mod integrations.
 - [Architectury API](https://modrinth.com/mod/architectury-api) — required
 - [JEI](https://modrinth.com/mod/jei) — optional, enables craft-from-nearby
 - [Sophisticated Backpacks](https://www.curseforge.com/minecraft/mc-mods/sophisticated-backpacks) — optional, enables backpack buttons
+- [ItemLocks](https://www.curseforge.com/minecraft/mc-mods/itemlocks) — optional, locked slots are skipped by quick stack / dump
+- [ClientSort](https://www.curseforge.com/minecraft/mc-mods/clientsort) — optional; plays nice via ItemLocks (the shared lock layer)
 
 ## Keybinds
 
