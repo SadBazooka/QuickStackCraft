@@ -4,6 +4,12 @@ All notable changes to this fork are documented here. This fork targets **Minecr
 
 ## v0.1.3
 
+- **Fabric support** — the mod is now available for Fabric as well as NeoForge, with full feature
+  parity: quick stack / dump / favorites / craft-from-nearby (JEI), storage-safe targeting,
+  keybinds, `/quickstackcraft` commands, ItemLocks compat, and the Sophisticated Backpacks buttons
+  (via the community Fabric port). Modded storage is supported through the Fabric Transfer API.
+  Fabric config lives in `config/quickstackcraft-fabric.json`, with an optional in-game config
+  screen when Cloth Config + Mod Menu are installed. Download the jar matching your loader.
 - **ItemLocks compatibility** — Quick Stack and Dump now leave alone any inventory slot you've
   locked with the [ItemLocks](https://www.curseforge.com/minecraft/mc-mods/itemlocks) mod. Since
   ItemLocks is the shared "lock layer" (ClientSort respects it too), locking an item once protects

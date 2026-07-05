@@ -43,14 +43,17 @@ full fork with new features, safety fixes, and mod integrations.
   into machine input slots.
 - **JEI craft-from-nearby** reworked to consider every acceptable item per slot and place
   whichever variant you actually own.
-- **Sophisticated Backpacks** stack/dump support (NeoForge), added via a NeoForge `ScreenEvent`
-  hook so it needs no hard dependency.
+- **Sophisticated Backpacks** stack/dump support (buttons on the backpack screen), on both loaders.
 - **ItemLocks compatibility** and favorites that work in every container screen (not just the
   player inventory).
+- **Fabric support** with full feature parity (including modded storage via the Fabric Transfer API),
+  plus an optional Cloth Config / Mod Menu config screen.
 
 ## Configuration
 
-`config/quickstackcraft-common.toml` (generated on first launch):
+Config file (generated on first launch): `config/quickstackcraft-common.toml` on **NeoForge**,
+`config/quickstackcraft-fabric.json` on **Fabric**. On Fabric, if **Cloth Config** and **Mod Menu**
+are installed you also get an in-game config screen (Mod Menu → QuickStack & Craft → Config).
 
 | Option | Default | Description |
 |---|---|---|
@@ -63,7 +66,11 @@ full fork with new features, safety fixes, and mod integrations.
 
 | Minecraft | NeoForge | Fabric |
 |-|-|-|
-| 1.21.1 | Yes | Builds (Sophisticated Backpacks integration is NeoForge-only) |
+| 1.21.1 | Yes | Yes |
+
+Both loaders have full feature parity, including the Sophisticated Backpacks integration (using the
+official mod on NeoForge, and the community Fabric port on Fabric). Download the jar matching your
+loader (`…-neoforge-…` or `…-fabric-…`).
 
 ## Dependencies
 
@@ -72,6 +79,7 @@ full fork with new features, safety fixes, and mod integrations.
 - [Sophisticated Backpacks](https://www.curseforge.com/minecraft/mc-mods/sophisticated-backpacks) — optional, enables backpack buttons
 - [ItemLocks](https://www.curseforge.com/minecraft/mc-mods/itemlocks) — optional, locked slots are skipped by quick stack / dump
 - [ClientSort](https://www.curseforge.com/minecraft/mc-mods/clientsort) — optional; plays nice via ItemLocks (the shared lock layer)
+- **Fabric only:** [Cloth Config](https://modrinth.com/mod/cloth-config) + [Mod Menu](https://modrinth.com/mod/modmenu) — optional, adds an in-game config screen
 
 ## Keybinds
 

@@ -1,4 +1,4 @@
-package net.zeronexus.quickstackcraft.neoforge.command;
+package net.zeronexus.quickstackcraft.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -20,6 +20,9 @@ import java.util.Set;
 /**
  * {@code /quickstackcraft whitelist|blacklist add|remove|list|clear [block]}.
  * With no block argument, add/remove act on the block the player is looking at.
+ *
+ * <p>Loader-agnostic (vanilla brigadier + {@link RuntimeTargets}); registered from each platform
+ * (NeoForge {@code RegisterCommandsEvent}, Fabric {@code CommandRegistrationCallback}).
  */
 public final class QscCommands {
 

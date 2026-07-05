@@ -7,6 +7,11 @@ architectury {
     neoForge()
 }
 
+// Loader-suffixed jar name, e.g. quickstackcraft-neoforge-0.1.3+1.21.1.jar
+base {
+    archivesName = "${rootProject.archives_base_name}-neoforge"
+}
+
 configurations {
     common {
         canBeResolved = true

@@ -84,6 +84,12 @@ public class ContainerAccess {
     public ItemStack insertItem(ItemStack stack) {
         if (stack.isEmpty()) return ItemStack.EMPTY;
 
+        // Containers that can insert themselves (e.g. Fabric Transfer-API storage) do it safely
+        // via their own transactional insert, honouring capacity and multi-slot distribution.
+        if (container instanceof BulkInsertContainer bulk) {
+            return bulk.quickstackcraft$insertBulk(stack.copy());
+        }
+
         ItemStack toInsert = stack.copy();
 
         // First pass: fill existing stacks of the same type

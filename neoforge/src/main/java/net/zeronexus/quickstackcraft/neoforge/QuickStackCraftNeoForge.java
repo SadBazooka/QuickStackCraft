@@ -13,7 +13,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.zeronexus.quickstackcraft.QuickStackCraft;
 import net.zeronexus.quickstackcraft.client.ModKeybinds;
 import net.zeronexus.quickstackcraft.logic.neoforge.FavoritesManagerImpl;
-import net.zeronexus.quickstackcraft.neoforge.command.QscCommands;
+import net.zeronexus.quickstackcraft.command.QscCommands;
 import net.zeronexus.quickstackcraft.neoforge.config.NeoConfig;
 import net.zeronexus.quickstackcraft.neoforge.config.RuntimeTargetsStore;
 import net.zeronexus.quickstackcraft.network.ModNetworking;

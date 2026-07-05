@@ -11,7 +11,8 @@
     "environment": "*",
     "entrypoints": {
         "main": ["net.zeronexus.quickstackcraft.fabric.QuickStackCraftFabric"],
-        "client": ["net.zeronexus.quickstackcraft.fabric.QuickStackCraftFabricClient"]
+        "client": ["net.zeronexus.quickstackcraft.fabric.QuickStackCraftFabricClient"],
+        "modmenu": ["net.zeronexus.quickstackcraft.fabric.client.ModMenuIntegration"]
     },
     "mixins": [
         "quickstackcraft-common.mixins.json",
@@ -23,5 +24,10 @@
         "minecraft": "~${minecraft_version}",
         "architectury": ">=${architectury_api_version}",
         "java": ">=${java_version}"
+    },
+    "suggests": {
+        "cloth-config": "*",
+        "modmenu": "*",
+        "sophisticatedbackpacks": "*"
     }
 }
